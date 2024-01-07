@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # Load the dataset
-file_path = 'D:/Demo_flask/Project_DSA/election_dataset.csv'
+file_path = 'D:/Project_Election/elct_data.csv'
 election_data = pd.read_csv(file_path)
 
 # Replace '\n' in column names with spaces
@@ -18,6 +18,10 @@ election_data['CRIMINAL CASES'].replace('Not Available', 0, inplace=True)
 
 # Convert columns to numeric types
 election_data['CRIMINAL CASES'] = pd.to_numeric(election_data['CRIMINAL CASES'], errors='coerce')
+
+election_data['EDUCATION'] = election_data['EDUCATION'].replace(['Not Available','Others'],'Illiterate')
+election_data['EDUCATION'] = election_data['EDUCATION'].replace(['Post Graduate\n'],'Post Graduate')
+election_data['EDUCATION'] = election_data['EDUCATION'].replace(['5th Pass','8th Pass'],'Illiterate')
 
 # Impute missing values in numeric columns with the median
 
@@ -48,34 +52,49 @@ for column in columns_to_fill:
     median_value = election_data[column].median()
     election_data[column].fillna(median_value, inplace=True)
 
-# Encode categorical columns
-le = LabelEncoder()
-
-categorical_columns = ['GENDER', 'PARTY', 'EDUCATION', 'CATEGORY']
-for col in categorical_columns:
-    election_data[col] = le.fit_transform(election_data[col])
-
-
 # Drop specified columns
-
 columns_to_drop = ['STATE', 'CONSTITUENCY', 'NAME', 'SYMBOL']
 election_data.drop(columns_to_drop, axis=1, inplace=True)
 
-# Standardize numeric columns
+# Encode categorical variables
+label_encoder = LabelEncoder()
+for col in ['PARTY', 'GENDER', 'CATEGORY', 'EDUCATION']:
+    election_data[col] = label_encoder.fit_transform(election_data[col])
 
-std = StandardScaler()
-cols_to_standardize = ['PARTY','EDUCATION','AGE','CRIMINAL CASES','CATEGORY','GENDER','TOTAL VOTES', 'TOTAL ELECTORS', 'ASSETS', 'LIABILITIES']
-for col in cols_to_standardize:
-    election_data[col] = std.fit_transform(election_data[col].values.reshape(-1, 1))
-
-# Split the cleaned data into training and testing sets,'WINNER' is the target variable
-
-X = election_data.drop('WINNER', axis=1)
+# Split the data into features (X) and target variable (y)
+X = election_data.drop(['WINNER'], axis=1)
 y = election_data['WINNER']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
 
-# Train the Random Forest model
-rf_classifier = RandomForestClassifier(random_state=42)
-model = rf_classifier.fit(X_train, y_train)
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-pickle.dump(model, open('election_data.pkl','wb'))
+# Standardize numeric features using StandardScaler
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Train the Random Forest Classifier
+clf = RandomForestClassifier(random_state=42)
+clf.fit(X_train_scaled, y_train)
+
+# Make predictions on the test set
+y_pred = clf.predict(X_test_scaled)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Model Accuracy: {accuracy}')
+
+# Save the trained model using pickle
+model_filename = 'election_model.pkl'
+with open(model_filename, 'wb') as model_file:
+    pickle.dump(clf, model_file)
+
+encoder_filename = 'label_encoder.pkl'
+scaler_filename = 'scaler.pkl'
+
+with open(encoder_filename, 'wb') as encoder_file:
+    pickle.dump(label_encoder, encoder_file)
+
+with open(scaler_filename, 'wb') as scaler_file:
+    pickle.dump(scaler, scaler_file)
+
