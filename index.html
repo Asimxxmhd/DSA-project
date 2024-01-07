@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Prediction</title>
+</head>
+<body>
+    <h1>Election Prediction</h1>
+    <form action="/predict" method="post">
+        <label for="category">Category:</label>
+        <input type="text" name="category" required><br>
+
+        <label for="age">Age:</label>
+        <input type="number" name="age" required><br>
+
+        <label for="criminal_cases">Criminal Cases:</label>
+        <input type="number" name="criminal_cases" required><br>
+
+        <label for="education">Education:</label>
+        <input type="text" name="education" required><br>
+
+        <button type="submit">Predict</button>
+    </form>
+</body>
+</html>
